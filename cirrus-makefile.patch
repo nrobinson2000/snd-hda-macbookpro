@@ -1,0 +1,7 @@
+--- Makefile	2021-10-16 22:55:01.035767460 -0400
++++ Makefile.new	2021-10-16 23:36:22.853613361 -0400
+@@ -20,4 +20,3 @@
+ 
+ install:
+ 	cp snd-hda-codec-cirrus.ko $(KDIR)/updates
+-	depmod -a
