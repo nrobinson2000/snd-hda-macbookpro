@@ -15,7 +15,7 @@ sha256sums=('SKIP'
 makedepends=("wget" "make" "gcc")
 
 pkgver() {
-    cd "$pkgname"
+    cd "$_gitname"
     printf "r%s.%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)" "$(uname -r | cut -d '-' -f1)"
 }
 
@@ -28,7 +28,7 @@ prepare() {
 
 package() {
     update_dir="$pkgdir/usr/lib/modules/$(uname -r)/updates"
-    patch_dir="$srcdir/$pkgname/patch_cirrus"
+    patch_dir="$srcdir/$_gitname/patch_cirrus"
     hda_dir="$srcdir/hda"
     mkdir -p $update_dir
 
