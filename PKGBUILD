@@ -26,15 +26,13 @@ prepare() {
     kernel_version=$(uname -r | cut -d '-' -f1)
     major_version=$(echo $kernel_version | cut -d '.' -f1)
     wget -c https://cdn.kernel.org/pub/linux/kernel/v$major_version.x/linux-$kernel_version.tar.xz -P $srcdir
-    tar --strip-components=3 -xvf $srcdir/linux-$kernel_version.tar.xz linux-$kernel_version/sound/pci/hda --directory=build/
+    tar --strip-components=3 -xf $srcdir/linux-$kernel_version.tar.xz linux-$kernel_version/sound/pci/hda --directory=build/
 }
 
 package() {
     update_dir="$pkgdir/usr/lib/modules/$(uname -r)/updates"
     patch_dir="$srcdir/$_gitname/patch_cirrus"
     hda_dir="$srcdir/hda"
-
-    mkdir -p $update_dir
 
     # Copy updated module sources
     cp $patch_dir/Makefile $patch_dir/patch_cirrus* $hda_dir
@@ -44,6 +42,10 @@ package() {
     patch -d $hda_dir -i $srcdir/linux-5.6.patch -p1
 
     # Build module
+    mkdir -p $update_dir
     make -C $hda_dir
     make -C $hda_dir install KDIR="$pkgdir/usr/lib/modules/$(uname -r)"
+
+    # Compress module
+    xz $update_dir/snd-hda-codec-cirrus.ko
 }
