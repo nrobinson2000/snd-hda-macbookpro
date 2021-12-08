@@ -2,16 +2,19 @@
 
 pkgname=snd-hda-macbookpro
 _gitname=snd_hda_macbookpro
-pkgver=r29.dbbd7fe.5.14.12
+pkgver=r29.dbbd7fe.5.10.83
 pkgrel=1
 pkgdesc="Kernel audio driver for Macs with 8409 HDA chip + MAX98706/SSM3515 amps"
 arch=("x86_64")
 url="https://github.com/davidjo/snd_hda_macbookpro"
 license=("custom")
 source=("git+${url}"
-        "cirrus-makefile.patch")
+        "cirrus-makefile.patch"
+        "linux-5.6.patch")
+
 sha256sums=('SKIP'
-            '97c20c210ff812f7428646215e365f1928b838e78e8292aaaf0cdba0bb1b8236')
+            '9f94d088191e67a9d45b552b8ebd9ffef6e23592f1f2dfec0d1f04b2292eff65'
+            '1b8bc2c9441c2a4cff0d22d4921a5199ea15a0a76d2764b96552bde436a11d6d')
 makedepends=("wget" "make" "gcc")
 
 pkgver() {
@@ -30,27 +33,17 @@ package() {
     update_dir="$pkgdir/usr/lib/modules/$(uname -r)/updates"
     patch_dir="$srcdir/$_gitname/patch_cirrus"
     hda_dir="$srcdir/hda"
+
     mkdir -p $update_dir
 
-    # Apply patches
+    # Copy updated module sources
     cp $patch_dir/Makefile $patch_dir/patch_cirrus* $hda_dir
-    patch $hda_dir/Makefile $srcdir/cirrus-makefile.patch
 
-    # if kernel version is >= 5.5 then change
-    # event = snd_hda_jack_tbl_get_from_tag(codec, tag);
-    # to
-    # event = snd_hda_jack_tbl_get_from_tag(codec, tag, 0);
-    sed -i 's/event = snd_hda_jack_tbl_get_from_tag(codec, tag);/event = snd_hda_jack_tbl_get_from_tag(codec, tag, 0);/' $hda_dir/patch_cirrus.c
+    # Apply patches
+    patch -d $hda_dir -i $srcdir/cirrus-makefile.patch -p1
+    patch -d $hda_dir -i $srcdir/linux-5.6.patch -p1
 
-    # if kernel version >= 5.6 then
-    # change timespec to timespec64
-    # change getnstimeofday to ktime_get_real_ts64
-    sed -i 's/timespec/timespec64/' $hda_dir/patch_cirrus.c
-    sed -i 's/timespec/timespec64/' $hda_dir/patch_cirrus_new84.h
-    sed -i 's/getnstimeofday/ktime_get_real_ts64/' $hda_dir/patch_cirrus.c
-    sed -i 's/getnstimeofday/ktime_get_real_ts64/' $hda_dir/patch_cirrus_new84.h
-
-    cd $hda_dir
-    make
-    make install KDIR="$pkgdir/usr/lib/modules/$(uname -r)"
+    # Build module
+    make -C $hda_dir
+    make -C $hda_dir install KDIR="$pkgdir/usr/lib/modules/$(uname -r)"
 }
